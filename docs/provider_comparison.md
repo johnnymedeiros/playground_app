@@ -381,10 +381,22 @@ ChangeNotifierProvider(
 
 **ProxyProvider:**
 ```dart
-// ✅ OTIMIZADO: Carregamento automático
+// ✅ RECOMENDADO: Lazy Loading (padrão Provider)
 class ItemListController {
-  ItemListController(this._service, this._notifier) {
-    loadItems(); // Executa apenas na criação da instância
+  bool _initialized = false;
+  
+  ItemListController(this._service, this._notifier); // Construtor limpo
+  
+  ItemListStates get state {
+    _ensureInitialized(); // Carrega apenas na primeira consulta
+    return _notifier.state;
+  }
+  
+  void _ensureInitialized() {
+    if (!_initialized) {
+      _initialized = true;
+      loadItems(); // Uma única execução
+    }
   }
 }
 ```
@@ -395,11 +407,40 @@ class ItemListController {
 |-----------|----------------|-------------------------|-------------|
 | **❌ No build()** | Múltiplas | Muitos | Ruim |
 | **✅ No create** | Uma única | Mínimos | Excelente |
-| **✅ No construtor** | Uma única | Mínimos | Excelente |
+| **✅ Lazy Loading** | Uma única | Mínimos | Excelente |
 
-### 🎯 Dicas Adicionais
+### 🎯 Melhores Práticas do Provider
 
-**🔄 Use Factory Registration:**
+**🔄 Lazy Loading no ProxyProvider:**
+```dart
+// ✅ RECOMENDADO: Construtor sem efeitos colaterais
+class ItemListController {
+  bool _initialized = false;
+  
+  ItemListController(this._service, this._notifier); // Limpo
+  
+  ItemListStates get state {
+    _ensureInitialized(); // Lazy loading
+    return _notifier.state;
+  }
+  
+  void _ensureInitialized() {
+    if (!_initialized) {
+      _initialized = true;
+      loadItems();
+    }
+  }
+}
+
+// ❌ EVITAR: Efeitos colaterais no construtor
+class ItemListController {
+  ItemListController(this._service, this._notifier) {
+    loadItems(); // Pode causar setState durante build
+  }
+}
+```
+
+**🏭 Use Factory Registration:**
 ```dart
 // ✅ Nova instância a cada chamada
 getIt.registerFactory<ItemListProvider>(() => ItemListProvider(service));
