@@ -252,17 +252,27 @@ MultiProvider(
 )
 ```
 
-### ProxyProvider - Conexão via Injeção de Dependência (Otimizado)
+### ProxyProvider - Conexão via Injeção de Dependência (Lazy Loading)
 ```dart
-// Controllers separados com carregamento otimizado
+// Controllers separados com inicialização lazy (padrão Provider)
 class ItemListController {
   final ItemService _itemService;
   final ItemListNotifier _notifier;
+  bool _initialized = false;
 
-  ItemListController(this._itemService, this._notifier) {
-    // ⚡ OTIMIZAÇÃO: Carrega dados automaticamente no construtor
-    // Evita carregar no build() que causaria múltiplas chamadas
-    loadItems();
+  // ✅ PADRÃO PROVIDER: Construtor limpo sem efeitos colaterais
+  ItemListController(this._itemService, this._notifier);
+
+  ItemListStates get state {
+    _ensureInitialized(); // Carrega apenas quando necessário
+    return _notifier.state;
+  }
+
+  void _ensureInitialized() {
+    if (!_initialized) {
+      _initialized = true;
+      loadItems(); // Primeira chamada dispara carregamento
+    }
   }
 
   Future<void> loadItems() async { /* ... */ }
@@ -283,7 +293,7 @@ MultiProvider(
     ChangeNotifierProvider(create: (_) => ItemListNotifier()),
     ProxyProvider<ItemListNotifier, ItemListController>(
       update: (_, notifier, __) => ItemListController(service, notifier),
-      // ⚡ Controller já carrega dados automaticamente
+      // ✅ Controller carrega dados apenas quando state é acessado (lazy)
     ),
     
     // Delete

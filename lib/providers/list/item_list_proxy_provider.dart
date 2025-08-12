@@ -16,14 +16,21 @@ class ItemListNotifier extends ChangeNotifier {
 class ItemListController {
   final ItemService _itemService;
   final ItemListNotifier _notifier;
+  bool _initialized = false;
 
-  ItemListController(this._itemService, this._notifier) {
-    // Carrega dados automaticamente quando o controller é criado
-    // Evita carregar no build() que causaria múltiplas chamadas
-    loadItems();
+  ItemListController(this._itemService, this._notifier);
+
+  ItemListStates get state {
+    _ensureInitialized();
+    return _notifier.state;
   }
 
-  ItemListStates get state => _notifier.state;
+  void _ensureInitialized() {
+    if (!_initialized) {
+      _initialized = true;
+      loadItems();
+    }
+  }
 
   Future<void> loadItems() async {
     if (_notifier.state is ItemListLoadingState) return;
