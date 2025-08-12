@@ -23,13 +23,16 @@ class ItemListScreen extends StatelessWidget {
           ChangeNotifierProvider(
             create: (_) => getIt<ItemListProvider>()..loadItems(),
           ),
-          ChangeNotifierProvider(
-            create: (_) => getIt<ItemDeleteProvider>(),
-          ),
+          ChangeNotifierProvider(create: (_) => getIt<ItemDeleteProvider>()),
         ],
         child: Consumer2<ItemListProvider, ItemDeleteProvider>(
           builder: (context, listProvider, deleteProvider, child) {
-            return _buildStateWidget(context, listProvider.state, listProvider, deleteProvider);
+            return _buildStateWidget(
+              context,
+              listProvider.state,
+              listProvider,
+              deleteProvider,
+            );
           },
         ),
       ),
@@ -43,72 +46,63 @@ class ItemListScreen extends StatelessWidget {
     ItemDeleteProvider deleteProvider,
   ) {
     return switch (state) {
-      ItemListInitialState() => const Center(
-          child: Text('Inicializando...'),
-        ),
-      
+      ItemListInitialState() => const Center(child: Text('Inicializando...')),
+
       ItemListLoadingState() => const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Carregando itens...'),
-            ],
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Carregando itens...'),
+          ],
         ),
-      
-      ItemListSuccessState(:final items) => 
-        _buildItemList(context, items, listProvider, deleteProvider),
-      
+      ),
+
+      ItemListSuccessState(:final items) => _buildItemList(
+        context,
+        items,
+        listProvider,
+        deleteProvider,
+      ),
+
       ItemListEmptyState() => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.inbox,
-                size: 64,
-                color: Colors.grey,
-              ),
-              const SizedBox(height: 16),
-              const Text('Nenhum item encontrado'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: listProvider.retry,
-                child: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.inbox, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('Nenhum item encontrado'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: listProvider.retry,
+              child: const Text('Tentar novamente'),
+            ),
+          ],
         ),
-      
+      ),
+
       ItemListFailureState(:final message) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error,
-                size: 64,
-                color: Colors.red,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: listProvider.retry,
-                child: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: listProvider.retry,
+              child: const Text('Tentar novamente'),
+            ),
+          ],
         ),
-      
-      
-      _ => const Center(
-          child: Text('Estado desconhecido'),
-        ),
+      ),
+
+      _ => const Center(child: Text('Estado desconhecido')),
     };
   }
 
@@ -129,7 +123,12 @@ class ItemListScreen extends StatelessWidget {
           child: ListTile(
             title: Text(item.title),
             subtitle: Text(item.description),
-            trailing: _buildDeleteButton(context, item, deleteProvider, listProvider),
+            trailing: _buildDeleteButton(
+              context,
+              item,
+              deleteProvider,
+              listProvider,
+            ),
           ),
         );
       },
@@ -143,7 +142,7 @@ class ItemListScreen extends StatelessWidget {
     ItemListProvider listProvider,
   ) {
     return switch (deleteProvider.state) {
-      ItemDeleteLoadingState(:final itemId) when itemId == item.id => 
+      ItemDeleteLoadingState(:final itemId) when itemId == item.id =>
         const SizedBox(
           width: 24,
           height: 24,

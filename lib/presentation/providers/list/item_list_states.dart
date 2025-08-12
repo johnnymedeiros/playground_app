@@ -1,6 +1,6 @@
 import '../../../models/item.dart';
 
-abstract class ItemListStates {}
+sealed class ItemListStates {}
 
 final class ItemListInitialState implements ItemListStates {}
 
