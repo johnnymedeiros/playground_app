@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../services/item_service.dart';
+import '../../../data/services/item_service.dart';
 import 'item_delete_states.dart';
 
 class ItemDeleteProvider extends ChangeNotifier {

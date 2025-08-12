@@ -1,5 +1,5 @@
 import 'package:get_it/get_it.dart';
-import '../services/item_service.dart';
+import '../data/services/item_service.dart';
 import '../presentation/providers/list/item_list_provider.dart';
 import '../presentation/providers/delete/item_delete_provider.dart';
 

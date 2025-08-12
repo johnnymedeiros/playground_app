@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:playground_app/services/item_service.dart';
+import 'package:playground_app/data/services/item_service.dart';
 
 void main() {
   group('ItemServiceImpl Tests', () {
