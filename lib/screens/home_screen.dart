@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'item_list_screen.dart';
-import 'item_list_proxy_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -34,24 +33,6 @@ class HomeScreen extends StatelessWidget {
               label: const Text('Provider Simples'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(fontSize: 16),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const ItemListProxyScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.link),
-              label: const Text('ProxyProvider'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 16),

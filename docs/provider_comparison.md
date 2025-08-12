@@ -252,30 +252,35 @@ MultiProvider(
 )
 ```
 
-### ProxyProvider - Conexão via Injeção de Dependência (Lazy Loading)
+### ProxyProvider - Conexão via Injeção de Dependência (Controller Limpo)
 ```dart
-// Controllers separados com inicialização lazy (padrão Provider)
+// Controllers separados com responsabilidade única
 class ItemListController {
   final ItemService _itemService;
   final ItemListNotifier _notifier;
-  bool _initialized = false;
 
   // ✅ PADRÃO PROVIDER: Construtor limpo sem efeitos colaterais
   ItemListController(this._itemService, this._notifier);
 
-  ItemListStates get state {
-    _ensureInitialized(); // Carrega apenas quando necessário
-    return _notifier.state;
-  }
+  ItemListStates get state => _notifier.state;
 
-  void _ensureInitialized() {
-    if (!_initialized) {
-      _initialized = true;
-      loadItems(); // Primeira chamada dispara carregamento
+  Future<void> loadItems() async {
+    if (_notifier.state is ItemListLoadingState) return;
+    
+    _notifier.setState(ItemListLoadingState());
+    try {
+      final items = await _itemService.fetchItems();
+      if (items.isEmpty) {
+        _notifier.setState(ItemListEmptyState());
+      } else {
+        _notifier.setState(ItemListSuccessState(items: items));
+      }
+    } catch (e) {
+      _notifier.setState(ItemListFailureState(message: 'Erro: $e'));
     }
   }
 
-  Future<void> loadItems() async { /* ... */ }
+  void retry() => loadItems();
   void refreshAfterDelete() => loadItems();
 }
 
@@ -292,17 +297,35 @@ MultiProvider(
     // Lista
     ChangeNotifierProvider(create: (_) => ItemListNotifier()),
     ProxyProvider<ItemListNotifier, ItemListController>(
-      update: (_, notifier, __) => ItemListController(service, notifier),
-      // ✅ Controller carrega dados apenas quando state é acessado (lazy)
+      update: (_, notifier, previousController) {
+        // ✅ Reutiliza controller existente para evitar recriação
+        if (previousController != null && previousController.notifier == notifier) {
+          return previousController;
+        }
+        return ItemListController(service, notifier);
+      },
     ),
     
     // Delete
     ChangeNotifierProvider(create: (_) => ItemDeleteNotifier()),
-    ProxyProvider<ItemDeleteNotifier, ItemDeleteController>(...),
+    ProxyProvider<ItemDeleteNotifier, ItemDeleteController>(
+      update: (_, notifier, previousController) {
+        if (previousController != null && previousController.notifier == notifier) {
+          return previousController;
+        }
+        return ItemDeleteController(service, notifier);
+      },
+    ),
   ],
   child: Consumer2<ItemListController, ItemDeleteController>(
     builder: (context, listController, deleteController, child) {
-      // Ambos controllers disponíveis com separação completa
+      // ✅ Carregamento controlado pela UI
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (listController.state is ItemListInitialState) {
+          listController.loadItems();
+        }
+      });
+      return buildUI(listController, deleteController);
     },
   ),
 )
@@ -317,6 +340,59 @@ MultiProvider(
 **📦 Reutilização**: O `ItemDeleteController` pode ser reutilizado em outras telas sem depender de `ChangeNotifier`.
 
 **🧪 Testabilidade**: Controllers do ProxyProvider são mais fáceis de testar pois não dependem do Flutter framework.
+
+## ⚠️ Problemas Comuns do ProxyProvider
+
+### ❌ Problema: Controller Recriado a Cada Rebuild
+```dart
+// ❌ PROBLEMÁTICO: Nova instância sempre
+ProxyProvider<ItemListNotifier, ItemListController>(
+  update: (_, notifier, __) => ItemListController(service, notifier),
+)
+```
+
+**Problemas:**
+- Estado do controller é perdido
+- Performance ruim
+- Múltiplas chamadas de API desnecessárias
+
+### ✅ Solução: Reutilizar Controller Existente
+```dart
+// ✅ CORRETO: Reutiliza quando possível
+ProxyProvider<ItemListNotifier, ItemListController>(
+  update: (_, notifier, previousController) {
+    if (previousController?.notifier == notifier) {
+      return previousController!; // Reutiliza
+    }
+    return ItemListController(service, notifier); // Cria novo só quando necessário
+  },
+)
+```
+
+### ❌ Problema: Uso Incorreto do GetIt no ProxyProvider
+```dart
+// ❌ PROBLEMÁTICO: GetIt criando instâncias diferentes
+ChangeNotifierProvider(create: (_) => getIt<ItemListNotifier>()),
+ProxyProvider<ItemListNotifier, ItemListController>(
+  update: (_, notifier, __) => ItemListController(service, notifier),
+)
+```
+
+**Problema:** Se `getIt<ItemListNotifier>()` é `registerFactory`, cria instâncias diferentes.
+
+### ✅ Solução: Criar Instância Diretamente
+```dart
+// ✅ CORRETO: Instância única controlada pelo Provider
+ChangeNotifierProvider(create: (_) => ItemListNotifier()), // Instância direta
+ProxyProvider<ItemListNotifier, ItemListController>(
+  update: (_, notifier, previousController) {
+    if (previousController?.notifier == notifier) {
+      return previousController!;
+    }
+    return ItemListController(getIt<ItemService>(), notifier); // GetIt apenas para service
+  },
+)
+```
 
 ## 🤔 Quando Usar Cada Abordagem?
 
@@ -368,36 +444,41 @@ Widget build(BuildContext context) {
 }
 ```
 
-### ✅ Prefira - Carregamento na Criação
+### ✅ Prefira - Carregamento Explícito
 
 **Provider Simples:**
 ```dart
-// ✅ OTIMIZADO: Uma única chamada
+// ✅ OTIMIZADO: Uma única chamada no create
 ChangeNotifierProvider(
-  create: (_) => ItemListProvider(service)..loadItems(), // Uma vez só
+  create: (_) => ItemListProvider(service)..loadItems(),
   child: Consumer<ItemListProvider>(...),
 )
 ```
 
 **ProxyProvider:**
 ```dart
-// ✅ RECOMENDADO: Lazy Loading (padrão Provider)
+// ✅ RECOMENDADO: Carregamento controlado pela UI
 class ItemListController {
-  bool _initialized = false;
+  final ItemService _itemService;
+  final ItemListNotifier _notifier;
   
   ItemListController(this._service, this._notifier); // Construtor limpo
   
-  ItemListStates get state {
-    _ensureInitialized(); // Carrega apenas na primeira consulta
-    return _notifier.state;
-  }
+  ItemListStates get state => _notifier.state; // Sem side effects
   
-  void _ensureInitialized() {
-    if (!_initialized) {
-      _initialized = true;
-      loadItems(); // Uma única execução
-    }
+  Future<void> loadItems() async {
+    if (_notifier.state is ItemListLoadingState) return;
+    _notifier.setState(ItemListLoadingState());
+    // ... resto da implementação
   }
+}
+
+// Na UI: chamada explícita quando necessário
+void initState() {
+  super.initState();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    context.read<ItemListController>().loadItems();
+  });
 }
 ```
 
@@ -407,37 +488,59 @@ class ItemListController {
 |-----------|----------------|-------------------------|-------------|
 | **❌ No build()** | Múltiplas | Muitos | Ruim |
 | **✅ No create** | Uma única | Mínimos | Excelente |
-| **✅ Lazy Loading** | Uma única | Mínimos | Excelente |
+| **✅ Carregamento Explícito** | Uma única | Mínimos | Excelente |
 
 ### 🎯 Melhores Práticas do Provider
 
-**🔄 Lazy Loading no ProxyProvider:**
+**✅ Controller Limpo:**
 ```dart
 // ✅ RECOMENDADO: Construtor sem efeitos colaterais
 class ItemListController {
-  bool _initialized = false;
+  final ItemService _itemService;
+  final ItemListNotifier _notifier;
   
   ItemListController(this._service, this._notifier); // Limpo
   
-  ItemListStates get state {
-    _ensureInitialized(); // Lazy loading
-    return _notifier.state;
-  }
+  ItemListStates get state => _notifier.state; // Sem side effects
+  ItemListNotifier get notifier => _notifier; // Para comparação no ProxyProvider
   
-  void _ensureInitialized() {
-    if (!_initialized) {
-      _initialized = true;
-      loadItems();
-    }
+  Future<void> loadItems() async {
+    if (_notifier.state is ItemListLoadingState) return;
+    _notifier.setState(ItemListLoadingState());
+    // ... implementação
   }
 }
 
-// ❌ EVITAR: Efeitos colaterais no construtor
+// ❌ EVITAR: Side effects no getter ou construtor
 class ItemListController {
   ItemListController(this._service, this._notifier) {
     loadItems(); // Pode causar setState durante build
   }
+  
+  ItemListStates get state {
+    loadItems(); // Side effect no getter
+    return _notifier.state;
+  }
 }
+```
+
+**🔄 ProxyProvider Otimizado:**
+```dart
+// ✅ RECOMENDADO: Evita recriação desnecessária
+ProxyProvider<ItemListNotifier, ItemListController>(
+  update: (_, notifier, previousController) {
+    // Reutiliza se o notifier for o mesmo
+    if (previousController?.notifier == notifier) {
+      return previousController!;
+    }
+    return ItemListController(service, notifier);
+  },
+)
+
+// ❌ PROBLEMÁTICO: Recria controller a cada rebuild
+ProxyProvider<ItemListNotifier, ItemListController>(
+  update: (_, notifier, __) => ItemListController(service, notifier), // Nova instância sempre
+)
 ```
 
 **🏭 Use Factory Registration:**
