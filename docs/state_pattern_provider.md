@@ -111,10 +111,10 @@ final class ItemDeleteFailureState implements ItemDeleteStates {
 ```
 lib/
 ├── data/
-│   ├── models/
-│   │   └── item.dart                    # Modelos de dados
 │   └── services/
 │       └── item_service.dart            # Camada de serviços
+├── models/
+│   └── item.dart                        # Modelos de dados
 ├── presentation/
 │   ├── providers/
 │   │   ├── list/                        # 📂 Provider de listagem
@@ -134,7 +134,8 @@ lib/
 ### Vantagens dessa Organização
 
 **📂 Separação por Camadas**:
-- `data/` - Modelos e serviços (acesso a dados)
+- `data/` - Serviços (acesso a dados)
+- `models/` - Modelos de dados
 - `presentation/` - UI e providers (apresentação)
 - `di/` - Injeção de dependências
 
