@@ -1,4 +1,4 @@
-import '../../models/item.dart';
+import '../../../models/item.dart';
 
 abstract class ItemListStates {}
 

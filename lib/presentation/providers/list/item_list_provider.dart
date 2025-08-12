@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/item_service.dart';
+import '../../../services/item_service.dart';
 import 'item_list_states.dart';
 
 class ItemListProvider extends ChangeNotifier {

@@ -1,7 +1,7 @@
 import 'package:get_it/get_it.dart';
 import '../services/item_service.dart';
-import '../providers/list/item_list_provider.dart';
-import '../providers/delete/item_delete_provider.dart';
+import '../presentation/providers/list/item_list_provider.dart';
+import '../presentation/providers/delete/item_delete_provider.dart';
 
 final GetIt getIt = GetIt.instance;
 

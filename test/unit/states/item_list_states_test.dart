@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:playground_app/providers/list/item_list_states.dart';
+import 'package:playground_app/presentation/providers/list/item_list_states.dart';
 import 'package:playground_app/models/item.dart';
 
 void main() {

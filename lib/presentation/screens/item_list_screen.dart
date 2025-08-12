@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../di/service_locator.dart';
-import '../models/item.dart';
+import '../../di/service_locator.dart';
+import '../../models/item.dart';
 import '../providers/list/item_list_provider.dart';
 import '../providers/delete/item_delete_provider.dart';
 import '../providers/list/item_list_states.dart';

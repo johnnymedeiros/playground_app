@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'di/service_locator.dart';
-import 'screens/home_screen.dart';
+import 'presentation/screens/home_screen.dart';
 
 void main() {
   setupServiceLocator();

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:playground_app/providers/list/item_list_provider.dart';
+import 'package:playground_app/presentation/providers/list/item_list_provider.dart';
 import 'package:playground_app/services/item_service.dart';
-import 'package:playground_app/providers/list/item_list_states.dart';
+import 'package:playground_app/presentation/providers/list/item_list_states.dart';
 import 'package:playground_app/models/item.dart';
 
 class MockItemService extends Mock implements ItemService {}
